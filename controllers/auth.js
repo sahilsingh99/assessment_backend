@@ -11,6 +11,15 @@ exports.signup = (req, res, next) =>{
     const {username, email, password} = req.body;
     console.log(req.body);
 
+    if(password.length < 6) {
+        let custom_error = {
+            status : 409,
+            custom_message : "enter a valid password of min length 6",
+            message : "no system error! (signup user)"
+        }
+        next(custom_error);
+    }
+
     User.findOne({email})
         .then( user => {
             if(user) {
@@ -23,8 +32,15 @@ exports.signup = (req, res, next) =>{
             } else {
                 const saltRounds = 10;
                 bcrypt.genSalt(saltRounds, function (err, salt) {
+                    if(err) {
+                        let custom_error = {
+                            status : 500,
+                            custom_message : "error in first hashing!",
+                            message : err2
+                        }
+                        next(custom_error);
+                    }
                     bcrypt.hash(password, salt, function (err2, hash) {
-                        console.log("error => ", err2);
                         if(err2){
                             let custom_error = {
                                 status : 500,
@@ -78,14 +94,13 @@ exports.signup = (req, res, next) =>{
 exports.login = (req, res, next) => {
 
     const {email , password} = req.body;
-
     User.findOne({email})
         .exec()
         .then(user => {
             if(!user || user.length < 1) {
                 let custom_error = {
                     status : 401,
-                    custom_message : "Auth failed!",
+                    custom_message : "Auth failed! enter valid email",
                     message : "no system error! (login email)"
                 }
                 next(custom_error);
@@ -121,6 +136,7 @@ exports.login = (req, res, next) => {
                                 message : "Logined successfully :)",
                                 data : {
                                     userId : user._id,
+                                    username : user.username,
                                     token : token
                                 }
                             });

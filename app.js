@@ -14,7 +14,6 @@ app.use(express.urlencoded({
 app.use(express.json());
 app.use(morgan('dev'));
 app.use(cookieParser());
-app.use(cors());
 
 const URI = process.env.DBURI;
 mongoose.connect(URI, {useNewUrlParser: true, useUnifiedTopology: true})
@@ -24,6 +23,22 @@ mongoose.connect(URI, {useNewUrlParser: true, useUnifiedTopology: true})
     .catch(err => {
         console.log(err);
     });
+
+//handling cors
+app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Origin",'*');
+    res.header(
+        "Access-Control-Allow-Headers",
+        "origin, X-Requested-With, Accept, Authorization, Content-type"
+    );
+    
+    if(req.method === "OPTIONS") {
+        res.header("Access-Control-Allow-Methods", "PUT, POST, PATCH , GET , DELETE");
+        return res.status(200).json({});
+    }
+
+    next();
+})
 
 // import routes
 const authRoute = require('./routes/auth');
@@ -49,12 +64,10 @@ app.use((req, res, next) => {
 
 // error handler
 app.use((error, req, res, next) => {
-    res.status(error.status || 500);
-    res.json({
-        error: {
+    console.log("error is here in handler", error);
+    return res.status(error.status || 500).json({
             custom_message : error.custom_message,
             message: error.message
-        }
     })
 })
 
